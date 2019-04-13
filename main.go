@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
 	"image/jpeg"
 	"image/png"
+	"log"
 	"math"
 	"os"
 	"strings"
@@ -19,11 +19,15 @@ type MImageWrapper struct{
 }
 
 func LoadMImageWrapperFromString(path string, convertToGrey bool) MImageWrapper{
-	fmt.Println("Load image from path ", path)
 	img := MImageWrapper{}
-	f,_ := os.Open(path)
-	img.data, img.format, _ =  image.Decode(f)
-
+	f,err := os.Open(path)
+	if err !=nil{
+		log.Fatal("Can't load an image by path" + path)
+	}
+	img.data, img.format, err =  image.Decode(f)
+	if err !=nil{
+		log.Fatal("Can't decode an image by path" + path)
+	}
 	tmp_path := strings.Split(path, string(os.PathSeparator))
 	fullname := tmp_path [len(tmp_path )-1]
 	img.name = strings.Split(fullname, ".")[0]
@@ -82,17 +86,31 @@ func (img MImageWrapper) mirror(axis uint8) image.Image{
 
 
 func (img MImageWrapper) saveImage(path string, format string) {
+	allowed_formats := map[string]bool{"png":true,
+								"jpeg":true,
+								"jpg":true}
 	save_format := img.format
 	if format != "" {
 		save_format = format
 	}
+	if _, ok := allowed_formats[format]; !ok{
+		log.Fatal("Can't use format " + format + " to save.")
+	}
+
 	fullpath := path + "/" + img.name + "." + save_format
-	f_out, _ := os.Create(fullpath)
+	f_out, err := os.Create(fullpath)
+
+	if err != nil {
+		log.Fatal("Error while creating the file to save on path" + path)
+	}
 
 	if save_format == "png"{
-		png.Encode(f_out, img.data)
+		err = png.Encode(f_out, img.data)
 	} else if save_format == "jpg"{
-		jpeg.Encode(f_out, img.data, nil)
+		err = jpeg.Encode(f_out, img.data, nil)
+	}
+	if err!= nil{
+		log.Fatal("Can't encode an image while saving")
 	}
 
 }
@@ -139,20 +157,21 @@ func (bl Blender) blend(mode string) MImageWrapper{
 	xdim := int(math.Min(float64(b.Dx()), float64(s.Dx())))
 	ydim := int(math.Min(float64(b.Dy()), float64(s.Dy())))
 
-
 	upLeft := image.Point{0, 0}
 	lowRight := image.Point{xdim, ydim}
 	blend_result := image.NewGray(image.Rectangle{upLeft, lowRight})
 	// Set color for each pixel.
+	blend_method := select_blend(mode)
+
+
 	a_b := float64(1)
 	for x := 0; x < xdim; x++ {
 		for y := 0; y < ydim; y++ {
 			c_s := float64(rgbaToGrey(bl.C_s.data.At(x, y)).Y) / 255.0
 			c_b := float64(rgbaToGrey(bl.C_b.data.At(x, y)).Y) / 255.0
 			a_s:= float64(rgbaToGrey(bl.C_alpha.data.At(x, y)).Y) / 255.0
-			val := apply_blend(c_b, c_s, a_s, a_b, mode) * 255.0
-			//blend_res := math.Min(c_b, c_s)
-			//val := (((1-a_s)*a_b * c_b) + ((1-a_b)*a_s*c_s) + (a_b * a_s * blend_res)) * 255.0
+			val := blend_method(c_b, c_s)
+			val = (((1-a_s)*a_b * c_b) + ((1-a_b)*a_s*c_s) + (a_b * a_s * val)) * 255.0
 			c_res := color.Gray{uint8(val)}
 			blend_result.Set(x, y, c_res)
 		}
@@ -163,8 +182,6 @@ func (bl Blender) blend(mode string) MImageWrapper{
 	result.format = "png"
 	return result
 }
-
-
 
 
 func normal_blend(C_b float64, C_s float64) float64{
@@ -222,54 +239,57 @@ func D_x(x float64) float64{
 	return res
 }
 
-func apply_blend(C_b float64, C_s float64, a_s float64, a_b float64, blend_method string) float64{
-	blend_res := 1.0
+func select_blend(blend_method string) func(float64, float64) float64{
 	switch blend_method{
 		case "normal_blend":
-			blend_res = normal_blend(C_b, C_s)
-
+			return normal_blend
 		case "multiply_blend":
-			blend_res = multiply_blend(C_b, C_s)
-
+			return multiply_blend
 		case "screen_blend":
-			blend_res = screen_blend(C_b, C_s)
-
+			return screen_blend
 		case "darken_blend":
-			blend_res = darken_blend(C_b, C_s)
-
+			return darken_blend
 		case "lighten_blend":
-			blend_res = lighten_blend(C_b, C_s)
-
+			return lighten_blend
 		case "colordodge_blend":
-			blend_res = colordodge_blend(C_b, C_s)
-
+			return colordodge_blend
 		case "colorburn_blend":
-			blend_res = colorburn_blend(C_b, C_s)
-
+			return colorburn_blend
 		case "softlight_blend":
-			blend_res = softlight_blend(C_b, C_s)
+			return softlight_blend
+		default:
+			log.Fatal("Invalid blend mode "+blend_method)
 	}
-	return (1.0-a_s)*a_b*C_b + (1.0-a_b)*a_s*C_s + a_s*a_b*blend_res
+	return normal_blend
 }
 
-
-
 func main(){
-	img1 := LoadMImageWrapperFromString("/home/grigory/PycharmProjects/comp_vis/images/cat1.jpg",
+	img1 := LoadMImageWrapperFromString("images/lena.jpg",
 										true)
-	fmt.Println(img1.name)
-	img2 := LoadMImageWrapperFromString("/home/grigory/PycharmProjects/comp_vis/images/cat2.jpg",
+	img2 := LoadMImageWrapperFromString("images/cat1.jpg",
 										true)
-	img3:= LoadMImageWrapperFromString("/home/grigory/PycharmProjects/comp_vis/images/batman.jpg",
+	img3:= LoadMImageWrapperFromString("images/batman.jpg",
 		true)
 
+	// Blend mode testing
 	blender := NewBlender(img1, img2, img3)
-	//// blender
 	modes := []string{"normal", "multiply", "screen", "darken",
 						"lighten", "colordodge", "colorburn", "softlight"}
 	for _, mode := range modes{
 		img := blender.blend(mode+"_blend")
 		img.saveImage("output", "png")
 	}
+	// Image affine test
+	img1.data = img1.mirror(0)
+	img1.name = "mirrored_hor"
+	img1.saveImage("output", "png")
+
+	img2.data = img2.mirror(1)
+	img2.name = "mirrored_ver"
+	img2.saveImage("output", "png")
+
+	img3.data = img3.transpose()
+	img3.name = "transposed"
+	img3.saveImage("output","png")
 }
 
