@@ -15,16 +15,18 @@ import (
 type MImageWrapper struct{
 	name string
 	format string
-	data image.Image
+	data draw.Image
 }
 
-func LoadMImageWrapperFromString(path string, convertToGrey bool) MImageWrapper{
+func LoadMImageWrapperFromString(path string) MImageWrapper{
 	img := MImageWrapper{}
 	f,err := os.Open(path)
 	if err !=nil{
 		log.Fatal("Can't load an image by path" + path)
 	}
-	img.data, img.format, err =  image.Decode(f)
+
+	var tmp_img image.Image
+	tmp_img, img.format, err =  image.Decode(f)
 	if err !=nil{
 		log.Fatal("Can't decode an image by path" + path)
 	}
@@ -32,60 +34,65 @@ func LoadMImageWrapperFromString(path string, convertToGrey bool) MImageWrapper{
 	fullname := tmp_path [len(tmp_path )-1]
 	img.name = strings.Split(fullname, ".")[0]
 
-	if convertToGrey {
-		tmp_data := toGrey(img.data)
-		img.data = tmp_data
-	}
+	img.data = toGrey(tmp_img)
 	return img
 }
 
-func toGrey(imgSrc image.Image) image.Image{
+func toGrey(imgSrc image.Image) draw.Image{
 	bounds := imgSrc.Bounds()
 	w, h := bounds.Max.X, bounds.Max.Y
 	grayScale := image.NewGray(image.Rectangle{image.Point{0, 0}, image.Point{w, h}})
 	for x := 0; x < w; x++ {
 		for y := 0; y < h; y++ {
-			grayColor := rgbaToGrey(imgSrc.At(x,y))
-			grayScale.Set(x, y, grayColor)
+			grayScale.Set(x, y, rgbaToGrey(imgSrc.At(x,y)))
 		}
 	}
 	return grayScale
 }
 
-func (img MImageWrapper) transpose() image.Image{
+func (img MImageWrapper) transpose() draw.Image{
 	bounds := img.data.Bounds()
 	w, h := bounds.Max.X, bounds.Max.Y
 	grayScale := image.NewGray(image.Rectangle{image.Point{0, 0},
 											image.Point{h, w}})
 	for x := 0; x < w; x++ {
 		for y := 0; y < h; y++ {
-			grayColor := rgbaToGrey(img.data.At(x,y))
-			grayScale.Set(y, x, grayColor)
+			grayScale.Set(y, x, img.data.At(x,y))
 		}
 	}
 	return grayScale
 }
 
 
-func (img MImageWrapper) mirror(axis uint8) image.Image{
+func (img  MImageWrapper) mirror(axis uint8){
 	bounds := img.data.Bounds()
 	w, h := bounds.Max.X, bounds.Max.Y
-	grayScale := image.NewGray(image.Rectangle{image.Point{0, 0}, image.Point{w, h}})
-	for x := 0; x < w; x++ {
-		for y := 0; y < h; y++ {
-			grayColor := rgbaToGrey(img.data.At(x,y))
-			if axis == 0{
-				grayScale.Set(w-x, y, grayColor)
-			} else if axis == 1{
-				grayScale.Set(x, h-y, grayColor)
+	//grayScale := image.NewGray(image.Rectangle{image.Point{0, 0}, image.Point{w, h}})
+	if axis==1 {
+		for x := 0; x < w; x++ {
+			for y := 0; y < h/2; y++ {
+				tmp1 := rgbaToGrey(img.data.At(x, y))
+				tmp2 := rgbaToGrey(img.data.At(x, h-y))
+				img.data.Set(x, h-y, tmp1)
+				img.data.Set(x, y, tmp2)
+
 			}
 		}
+	} else if axis == 0{
+		for x := 0; x < w/2; x++ {
+			for y := 0; y < h; y++ {
+				tmp1 :=  rgbaToGrey(img.data.At(x,y))
+				tmp2 := rgbaToGrey(img.data.At(w-x, y))
+				img.data.Set(w-x, y, tmp1)
+				img.data.Set(x, y,  tmp2)
+			}
+		}
+
 	}
-	return grayScale
 }
 
 
-func (img MImageWrapper) saveImage(path string, format string) {
+func (img  MImageWrapper) saveImage(path string, format string) {
 	allowed_formats := map[string]bool{"png":true,
 								"jpeg":true,
 								"jpg":true}
@@ -104,20 +111,25 @@ func (img MImageWrapper) saveImage(path string, format string) {
 		log.Fatal("Error while creating the file to save on path" + path)
 	}
 
+
+	bounds := img.data.Bounds()
+	w, h := bounds.Max.X, bounds.Max.Y
+	save_buffer := image.NewGray(image.Rectangle{image.Point{0, 0}, image.Point{w, h}})
+	for x := 0; x < w; x++ {
+		for y := 0; y < h; y++ {
+			val := rgbaToGrey(img.data.At(x,y))
+			save_buffer.Set(x, y, val)
+		}
+	}
 	if save_format == "png"{
-		err = png.Encode(f_out, img.data)
+		err = png.Encode(f_out, save_buffer)
 	} else if save_format == "jpg"{
-		err = jpeg.Encode(f_out, img.data, nil)
+		err = jpeg.Encode(f_out, save_buffer, nil)
 	}
 	if err!= nil{
 		log.Fatal("Can't encode an image while saving")
 	}
 
-}
-func (img MImageWrapper) toMatrix(){
-	b := img.data.Bounds()
-	m := image.NewRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
-	draw.Draw(m, m.Bounds(), img.data, b.Min, draw.Src)
 }
 
 type Blender struct{
@@ -211,15 +223,15 @@ func difference_blend(C_b float64, C_s float64) float64{
 func colordodge_blend(C_b float64, C_s float64) float64{
 	res := 1.0
 	if C_s < 1 {
-		res = math.Min(1.0, C_b/(1.0-C_s))
+		res = math.Min(1.0, C_b/(1.0-math.Min(C_s, 0.999)))
 	}
 	return res
 }
 
 func colorburn_blend(C_b float64, C_s float64) float64{
 	res := 0.0
-	if C_s>0 {
-		res = (1.0 - math.Min(1.0, (1.0-C_b)/C_s))
+	if C_s>0.0 {
+		res = (1.0 - math.Min(1.0, (1.0-C_b)/math.Max(C_s, 0.001)))
 	}
 	return res
 }
@@ -257,6 +269,8 @@ func select_blend(blend_method string) func(float64, float64) float64{
 			return colorburn_blend
 		case "softlight_blend":
 			return softlight_blend
+		case "difference_blend":
+			return difference_blend
 		default:
 			log.Fatal("Invalid blend mode "+blend_method)
 	}
@@ -264,28 +278,25 @@ func select_blend(blend_method string) func(float64, float64) float64{
 }
 
 func main(){
-	img1 := LoadMImageWrapperFromString("images/lena.jpg",
-										true)
-	img2 := LoadMImageWrapperFromString("images/cat1.jpg",
-										true)
-	img3:= LoadMImageWrapperFromString("images/batman.jpg",
-		true)
+	img1 := LoadMImageWrapperFromString("images/lena.jpg")
+	img2 := LoadMImageWrapperFromString("images/cat1.jpg")
+	img3:= LoadMImageWrapperFromString("images/batman.jpg")
 
 	// Blend mode testing
 	blender := NewBlender(img1, img2, img3)
-	modes := []string{"normal", "multiply", "screen", "darken",
+	modes := []string{"normal", "multiply", "screen", "darken", "difference",
 						"lighten", "colordodge", "colorburn", "softlight"}
 	for _, mode := range modes{
 		img := blender.blend(mode+"_blend")
 		img.saveImage("output", "png")
 	}
 	// Image affine test
-	img1.data = img1.mirror(0)
-	img1.name = "mirrored_hor"
+	img1.mirror(1)
+	img1.name = "mirrored_ver"
 	img1.saveImage("output", "png")
 
-	img2.data = img2.mirror(1)
-	img2.name = "mirrored_ver"
+	img2.mirror(0)
+	img2.name = "mirrored_hor"
 	img2.saveImage("output", "png")
 
 	img3.data = img3.transpose()
