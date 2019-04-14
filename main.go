@@ -26,7 +26,7 @@ func main(){
 	img2.Name = "mirrored_hor"
 	img2.SaveImage("output", "png")
 
-	img3.Transpose()
+	img3.UpdateData(img3.Transpose())
 	img3.Name = "transposed"
 	img3.SaveImage("output","png")
 }

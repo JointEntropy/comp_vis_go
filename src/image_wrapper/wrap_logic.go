@@ -50,7 +50,7 @@ func toGrey(imgSrc image.Image) draw.Image{
 	return grayScale
 }
 
-func (img MImageWrapper) Transpose(){
+func (img MImageWrapper) Transpose() draw.Image{
 	bounds := img.data.Bounds()
 	w, h := bounds.Max.X, bounds.Max.Y
 	grayScale := image.NewGray(image.Rectangle{image.Point{0, 0},
@@ -60,10 +60,12 @@ func (img MImageWrapper) Transpose(){
 			grayScale.Set(y, x, img.data.At(x,y))
 		}
 	}
-	img.data = grayScale
-	//return grayScale
+	return grayScale
 }
 
+func (img *MImageWrapper) UpdateData(new_img draw.Image){
+	(*img).data = new_img
+}
 
 func (img  MImageWrapper) Mirror(axis uint8){
 	bounds := img.data.Bounds()
