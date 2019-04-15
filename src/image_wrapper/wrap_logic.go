@@ -66,6 +66,9 @@ func (img MImageWrapper) Transpose() draw.Image{
 func (img *MImageWrapper) UpdateData(new_img draw.Image){
 	(*img).data = new_img
 }
+func (img *MImageWrapper) GetData() draw.Image{
+	return img.data
+}
 
 func (img  MImageWrapper) Mirror(axis uint8){
 	bounds := img.data.Bounds()
@@ -135,6 +138,18 @@ func (img  MImageWrapper) SaveImage(path string, format string) {
 
 }
 
+func (img *MImageWrapper) UpdateFromStatic(img2 image.Image){
+	bounds := img2.Bounds()
+	w, h := bounds.Max.X, bounds.Max.Y
+	save_buffer := image.NewGray(image.Rectangle{image.Point{0, 0}, image.Point{w, h}})
+	for x := 0; x < w; x++ {
+		for y := 0; y < h; y++ {
+			val := rgbaToGrey(img2.At(x,y))
+			save_buffer.Set(x, y, val)
+		}
+	}
+	(*img).data = save_buffer
+}
 func rgbaToGrey(col color.Color) color.Gray{
 	rr, gg, bb, _ := col.RGBA()
 	r := math.Pow(float64(rr), 2.2)
