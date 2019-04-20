@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-const eps float64 = 1e-1
+const eps float64 = 1e-4
 
 type Analyzer struct {
 	image MImageWrapper
@@ -27,7 +27,8 @@ func GetHist(img image.Image) map[uint8]uint32{
 
 	for x := 0; x < w; x++ {
 		for y := 0; y < h; y++ {
-			val := rgbaToGrey(img.At(x,y)).Y
+			orig := img.At(x,y)
+			val := rgbaToGrey(orig).Y
 			if count, ok := res[val]; ok {
 				res[val] = count + 1
 			}else{
@@ -61,7 +62,7 @@ func CalcVar(img image.Image, probs map[uint8]float64)float64{
 	E := CalcMean(img, probs)
 	var sigma2 float64 = 0
 	for i, prob := range probs {
-		sigma2 += math.Pow(float64(i) - E, 2)*(prob+eps)
+		sigma2 += math.Pow(float64(i) - E, 2)*prob
 	}
 	return sigma2
 }
@@ -69,10 +70,10 @@ func CalcVar(img image.Image, probs map[uint8]float64)float64{
 func CalcKurtosis(img image.Image, probs map[uint8]float64)float64{
 	V := CalcVar(img, probs)
 	E := CalcMean(img, probs)
-	kurt := (1/math.Pow(V,2))
+	kurt := (1/(math.Pow(V,2))+eps)
 	var sum float64 = 0
 	for i, prob := range probs {
-		sum += math.Pow(float64(i) - E, 4)*(prob+eps)
+		sum += math.Pow(float64(i) - E, 4)*prob
 	}
 	kurt = kurt*sum - 3
 	return kurt
@@ -80,10 +81,10 @@ func CalcKurtosis(img image.Image, probs map[uint8]float64)float64{
 func CalcSkewness(img image.Image, probs map[uint8]float64)float64{
 	V := CalcVar(img, probs)
 	E := CalcMean(img, probs)
-	kurt :=  (1/math.Pow(V,1.5))
+	kurt :=  (1/(math.Pow(V,1.5)))
 	var sum float64 = 0
 	for i, prob := range probs {
-		sum += math.Pow(float64(i) - E, 3)*(prob+eps)
+		sum += math.Pow(float64(i) - E, 3)*prob
 	}
 	kurt = kurt*sum
 	return kurt
@@ -97,12 +98,11 @@ func CalcEnergy(img image.Image, probs map[uint8]float64)float64{
 	return energy
 }
 func CalcEntropy(img image.Image, probs map[uint8]float64)float64{
-	eps := 1e-2
 	var entropy float64 = 0
 	for _, prob := range probs {
 		entropy += prob *  math.Log2(prob+eps)
 	}
-	return entropy
+	return -entropy
 }
 
 type pair struct {
