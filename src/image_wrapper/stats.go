@@ -133,8 +133,15 @@ func CoocurenceMatrix(img image.Image, d_r int, d_c int) image.Image{
 	}
 	res := image.NewGray(image.Rectangle{image.Point{0, 0},
 						image.Point{max_val + 1, max_val + 1}})
+
+	//for _, v := range pr {
+	//	if v>255{
+	//		log.Fatal("Invalid value for cooc matrix")
+	//	}
+	//}
+
 	for k, v := range pr {
-		res.Set(k.b, k.a, color.Gray{uint8(v)})
+		res.Set(k.b, k.a, color.Gray{uint8(math.Min(float64(v), 255.0))})
 	}
 	return res
 }

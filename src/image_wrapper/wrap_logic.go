@@ -157,7 +157,10 @@ func rgbaToGrey(col color.Color) color.Gray{
 	b := math.Pow(float64(bb), 2.2)
 	m := math.Pow(0.2125*r+0.7154*g+0.0721*b, 1/2.2)
 	Y := uint16(m + 0.5)
-	return color.Gray{uint8(Y >> 8)}
+	res := uint8(Y >> 8)
+	grey_res := color.Gray{res}
+	return grey_res
+	//return color.Gray{ uint8(0.299 * float32(rr) +  0.587 * float32(gg) + 0.114 * float32(bb))}
 }
 
 
