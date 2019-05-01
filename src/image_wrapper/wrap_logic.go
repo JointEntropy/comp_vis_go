@@ -58,6 +58,32 @@ func (img *MImageWrapper) GetData() draw.Image{
 	return img.data
 }
 
+func (img *MImageWrapper) ToMatrix() Matrix{
+	bounds := img.data.Bounds()
+	w, h := bounds.Max.X, bounds.Max.Y
+	data := make([][]float64, h)
+	for i := range data {
+		data[i] = make([]float64, w)
+	}
+	for y:=0;y<h;y++{
+		for x:=0;x<w;x++{
+			val := float64(rgbaToGrey(img.data.At(x, y)).Y)/255.0
+			data[y][x] = val
+		}
+	}
+	return Matrix{h,w, data}
+}
+func FromMatrix(imgMatrix Matrix, name string, frmt string) MImageWrapper{
+	h, w := imgMatrix.h, imgMatrix.w
+	res  := image.NewGray(image.Rectangle{image.Point{0, 0}, image.Point{w, h}})
+	for y:=0;y<h-1;y++{
+		for x:=0;x<w-1;x++{
+			res.Set(x, y, color.Gray{uint8(imgMatrix.data[y][x] * 255.0)})
+		}
+	}
+	return MImageWrapper{name, frmt, res}
+}
+
 func (img  MImageWrapper) SaveImage(path string, format string) {
 	allowed_formats := map[string]bool{"png":true,
 		"jpeg":true,

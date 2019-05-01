@@ -1,5 +1,10 @@
 package image_wrapper
 
+import (
+	"fmt"
+	"os"
+)
+
 type Matrix struct{
 	h int
 	w int
@@ -9,6 +14,9 @@ type Transformer struct{
 	matrix Matrix
 }
 
+func CreateMatrix(h int, w int, data [][]float64) Matrix{
+	return Matrix{h,w,data}
+}
 func CreatePoint(x int, y int) Matrix{
 	return Matrix{1,3, [][]float64{{float64(y), float64(x), 1}}}
 }
@@ -33,6 +41,27 @@ func DotMatrix(a Matrix, b Matrix) Matrix{
 	return Matrix{h,w,c}
 }
 
+func (matr * Matrix) DumpToFile(filepath string){
+	w, h := matr.w, matr.h
+	f, err := os.Create(filepath)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	for i:=0;i<h;i++{
+		for j:=0;j<w;j++{
+			st := fmt.Sprintf(" %f", matr.data[i][j]) // s == "123.456000"
+			f.WriteString(st)
+		}
+		f.WriteString("\n")
+	}
+
+	err = f.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+}
 func(matr Matrix)Inverse() Matrix{
 	return Matrix{}
 }
