@@ -5,39 +5,20 @@ import (
 )
 
 func main(){
-	img1 := image_wrapper.LoadMImageWrapperFromString("images/cat1.jpg")
+	img1 := image_wrapper.LoadMImageWrapperFromString("images/parrot_noise.jpg")
 	img1.SaveImage("output", "jpg")
 	imgMatr := img1.ToMatrix()
 
 	// сумма равна 0, но в ядре есть и отрицатеьные и положительные элеменьы
-	highPassFilter := image_wrapper.CreateMatrix(3,3,[][]float64{
-		{-0.125,-0.125, -0.125},
-		{-0.125, 1.0, -0.125},
-		{-0.125,-0.125,-0.125},
+	medianFilter := image_wrapper.CreateMatrix(3,3,[][]float64{
+		{0, 1, 0},
+		{1, 1, 1},
+		{0, 1, 0},
 	})
-	// сумма равна единице, но все элемены неотрицательны
-	lowPassFilter := image_wrapper.CreateMatrix(3,3,[][]float64{
-		{1/9.,1/9.,1/9.},
-		{1/9.,1/9.,1/9.},
-		{1/9.,1/9.,1/9.},
-	})
+	k := 3
+	convolveRes := image_wrapper.RangFilter(imgMatr, medianFilter, k)
+	convolveRes.DumpToFile("output/medianFilter.txt")
+	image_wrapper.FromMatrix(convolveRes, "medianFilter", "jpg").SaveImage("output", "jpg")
 
-	// сумма ядра равна 1
-	sharpeningFilter := image_wrapper.CreateMatrix(3,3,[][]float64{
-		{0.0,		-1.0/6.0, 	0.0},
-		{-1.0/6.0, 	10.0/6.0, 		-1.0/6.0},
-		{0.0,		-1.0/6.0,	0.0},
-	})
-	convolveRes := image_wrapper.Convolve2d(imgMatr, highPassFilter)
-	convolveRes.DumpToFile("output/highPassFilterRes.txt")
-	image_wrapper.FromMatrix(convolveRes, "highPassRes", "jpg").SaveImage("output", "jpg")
-
-	convolveRes = image_wrapper.Convolve2d(imgMatr, lowPassFilter)
-	convolveRes.DumpToFile("output/lowPassFilterRes.txt")
-	image_wrapper.FromMatrix(convolveRes, "lowPassRes", "jpg").SaveImage("output", "jpg")
-
-	convolveRes = image_wrapper.Convolve2d(imgMatr, sharpeningFilter)
-	convolveRes.DumpToFile("output/sharpeningFilterRes.txt")
-	image_wrapper.FromMatrix(convolveRes, "sharpeningRes", "jpg").SaveImage("output", "jpg")
 }
 
