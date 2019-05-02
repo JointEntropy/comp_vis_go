@@ -78,7 +78,7 @@ func FromMatrix(imgMatrix Matrix, name string, frmt string) MImageWrapper{
 	res  := image.NewGray(image.Rectangle{image.Point{0, 0}, image.Point{w, h}})
 	for y:=0;y<h-1;y++{
 		for x:=0;x<w-1;x++{
-			res.Set(x, y, color.Gray{uint8(imgMatrix.data[y][x] * 255.0)})
+			res.Set(x, y, color.Gray{uint8(math.Max(0, math.Min(255, imgMatrix.data[y][x] * 255.0)))})
 		}
 	}
 	return MImageWrapper{name, frmt, res}
