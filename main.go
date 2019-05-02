@@ -16,7 +16,7 @@ func main(){
 		{0, 1, 0},
 	})
 	k := 3
-	convolveRes := image_wrapper.RangFilter(imgMatr, medianFilter, k)
+	convolveRes := image_wrapper.RangeFilter(imgMatr, medianFilter, k)
 	convolveRes.DumpToFile("output/medianFilter.txt")
 	image_wrapper.FromMatrix(convolveRes, "medianFilter", "jpg").SaveImage("output", "jpg")
 

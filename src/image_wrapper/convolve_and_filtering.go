@@ -25,7 +25,7 @@ func Convolve2d(a Matrix, kernel Matrix) Matrix{
 	return CreateMatrix(h-kH+1, w-kW+1, res)
 }
 
-func RangFilter(a Matrix, kernel Matrix, k int) Matrix{
+func RangeFilter(a Matrix, kernel Matrix, k int) Matrix{
 	h, w := a.h, a.w
 	kH, kW := kernel.h, kernel.w
 
