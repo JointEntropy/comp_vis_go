@@ -17,11 +17,12 @@ type Transformer struct{
 func CreateMatrix(h int, w int, data [][]float64) Matrix{
 	return Matrix{h,w,data}
 }
+
 func CreatePoint(x int, y int) Matrix{
 	return Matrix{1,3, [][]float64{{float64(y), float64(x), 1}}}
 }
 
-func DotMatrix(a Matrix, b Matrix) Matrix{
+func DotMatrix(a  * Matrix, b  * Matrix) Matrix{
 	h, w :=  a.h, b.w
 	commonDim := a.w // == b.h
 	// готовим матрицу с результатом
@@ -64,6 +65,16 @@ func (matr * Matrix) DumpToFile(filepath string){
 }
 func(matr Matrix)Inverse() Matrix{
 	return Matrix{}
+}
+
+
+func  MatrixLikeAnother(matr * Matrix) Matrix{
+	data := make([][]float64, matr.h)
+	for i:=0;i<matr.h;i++{
+		data[i] = make([]float64, matr.w)
+	}
+	return CreateMatrix(matr.h, matr.w, data)
+
 }
 //func(matr Matrix) Determinant() float64{
 //	H, W := matr.h, matr.w

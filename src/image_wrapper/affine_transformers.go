@@ -18,7 +18,7 @@ func ApplyTransformer(tr Transformer, imgWrapper MImageWrapper) draw.Image{
 		{0,float64(H),1},
 		{float64(W), float64(H),1},
 	}}
-	newBounds := DotMatrix(bounds, tr.matrix)
+	newBounds := DotMatrix(&bounds, &tr.matrix)
 
 	newH := 0
 	for i:=0;i<4;i++{
@@ -33,7 +33,7 @@ func ApplyTransformer(tr Transformer, imgWrapper MImageWrapper) draw.Image{
 	for y:=0; y<newH;y++{
 		for x:=0; x<newW;x++{
 			pnt := Matrix{1,3, [][]float64{{float64(x),float64(y),1}}}
-			oldCoords := DotMatrix(pnt, inverseTransform).data
+			oldCoords := DotMatrix(&pnt, &inverseTransform).data
 			oldX := int(oldCoords[0][0])
 			oldY := int(oldCoords[0][1])
 			if (oldY >(H-1)) || (oldY<0) || (oldX>(W-1)) || (oldX<0){
