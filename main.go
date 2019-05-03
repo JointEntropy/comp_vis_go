@@ -2,9 +2,6 @@ package main
 
 import (
 	"./src/image_wrapper"
-	"fmt"
-	"log"
-	"math"
 )
 
 func main(){
@@ -12,37 +9,35 @@ func main(){
 	img1.SaveImage("output", "jpg")
 	imgMatr := img1.ToMatrix()
 
-	binary := image_wrapper.Binarize(imgMatr, 128)
-	//resMatr.DumpToFile("output/binarize.txt")
+	// сумма равна 0, но в ядре есть и отрицатеьные и положительные элеменьы
+	highPassFilter := image_wrapper.CreateMatrix(3,3,[][]float64{
+		{-0.125,-0.125, -0.125},
+		{-0.125, 1.0, -0.125},
+		{-0.125,-0.125,-0.125},
+	})
+	// сумма равна единице, но все элемены неотрицательны
+	lowPassFilter := image_wrapper.CreateMatrix(3,3,[][]float64{
+		{1/9.,1/9.,1/9.},
+		{1/9.,1/9.,1/9.},
+		{1/9.,1/9.,1/9.},
+	})
 
+	// сумма ядра равна 1
+	sharpeningFilter := image_wrapper.CreateMatrix(3,3,[][]float64{
+		{0.0,		-1.0/6.0, 	0.0},
+		{-1.0/6.0, 	10.0/6.0, 		-1.0/6.0},
+		{0.0,		-1.0/6.0,	0.0},
+	})
+	convolveRes := image_wrapper.Convolve2d(imgMatr, highPassFilter)
+	convolveRes.DumpToFile("output/highPassFilterRes.txt")
+	image_wrapper.FromMatrix(convolveRes, "highPassRes", "jpg").SaveImage("output", "jpg")
 
-	// проверка валидности вычислений моментов
-	eps := 1e-3
-	m00 := image_wrapper.CentralTwoDimensionalMoment(&binary, 0,0)
-	cm00 := image_wrapper.TwoDimensionalMoment(&binary, 0,0)
-	if  math.Abs(m00 - cm00)>eps{
-		log.Fatal(fmt.Sprintf("Не выполняется равенство нулевого и центрального моментов %f!=%f",
-			m00, cm00))
-	}
-	cm10 := image_wrapper.CentralTwoDimensionalMoment(&binary, 1,0)
-	cm01 := image_wrapper.CentralTwoDimensionalMoment(&binary, 0,1)
-	if  (math.Abs(cm10 - 0)>eps)  || (math.Abs(cm01 - 0)>eps){
-		log.Fatal(fmt.Sprintf("Не выполняется равенство центральных моментов первого порядка %f, %f: !=0",
-			cm10, cm01))
-	}
+	convolveRes = image_wrapper.Convolve2d(imgMatr, lowPassFilter)
+	convolveRes.DumpToFile("output/lowPassFilterRes.txt")
+	image_wrapper.FromMatrix(convolveRes, "lowPassRes", "jpg").SaveImage("output", "jpg")
 
-	// Вычисление моментов.
-	fmt.Printf("Геометрический момент нулевого порядка %f\n",
-				image_wrapper.TwoDimensionalMoment(&binary, 0,0))
-	fmt.Printf("Геометрический момент первого порядка p=1, q=0: %f\n",
-				image_wrapper.TwoDimensionalMoment(&binary, 1,0))
-	fmt.Printf("Геометрический момент первого порядка p=0, q=1: %f\n",
-		image_wrapper.TwoDimensionalMoment(&binary, 0,1))
-	fmt.Printf("Центральный геометрический момент второго порядка %f\n",
-				image_wrapper.CentralTwoDimensionalMoment(&binary, 1,1))
-	fmt.Printf("Нормализованный центральный геометрический момент второго порядка %f\n",
-		image_wrapper.NormalizedCentralTwoDimensionalMoment(&binary, 1,1))
-	image_wrapper.FromMatrix(binary, "binarize", "jpg").SaveImage("output", "jpg")
-
+	convolveRes = image_wrapper.Convolve2d(imgMatr, sharpeningFilter)
+	convolveRes.DumpToFile("output/sharpeningFilterRes.txt")
+	image_wrapper.FromMatrix(convolveRes, "sharpeningRes", "jpg").SaveImage("output", "jpg")
 }
 
