@@ -11,7 +11,7 @@ type Pallet struct {
 }
 
 func NewPallet(k uint8) Pallet{
-	ln := int(math.Round(math.Pow(2, float64(k))))
+	ln := int(math.Round(math.Pow(2.0, float64(k))))
 	var pallet []float64 = make([]float64, ln)
 	for i:=0;i<ln;i++{
 		pallet[i] = float64(i)/float64(ln-1)
@@ -32,33 +32,36 @@ func (pal Pallet)FindClosest(val float64) float64 {
 	if closest == -1.0{
 		log.Fatal("Huinya kakaya to")
 	}
-	return closest
+	return float64(closest)
 }
 
 
 
-func FloydSteinberg(image MImageWrapper, k uint8) Matrix{
+func FloydSteinberg(image * MImageWrapper, k uint8) Matrix{
 	pallet := NewPallet(k)
 	imgMatrix := image.ToMatrix()
 	w, h := imgMatrix.w, imgMatrix.h
 	for y:=0;y<h-1;y++{
-		for x:=1;x<w-1;x++{
+		for x:=0;x<w-1;x++{
 			pixel := imgMatrix.data[y][x]
 			value := pallet.FindClosest(pixel)
-			err := pixel - value
-			imgMatrix.data[y + 0][x + 1] += err * 7/16
-			imgMatrix.data[y + 1][x - 1] += err * 3/16
-			imgMatrix.data[y + 1][x    ] += err * 5/16
-			imgMatrix.data[y + 1][x + 1] += err * 1/16
+			err_ := pixel - value
+			imgMatrix.data[y][x] = value
+			imgMatrix.data[y + 0][x + 1] += err_ * 7.0/16.0
+			if x>0{
+				imgMatrix.data[y + 1][x - 1] += err_ * 3.0/16.0
+			}
+			imgMatrix.data[y + 1][x    ] += err_ * 5.0/16.0
+			imgMatrix.data[y + 1][x + 1] += err_ * 1.0/16.0
 		}
 	}
 
-	for i:=0;i<h;i++{
-		imgMatrix.data[i][w-1] = 1
-	}
-	for i:=0;i<w;i++{
-		imgMatrix.data[h-1][i] = 1
-	}
+	//for i:=0;i<h;i++{
+	//	res.data[i][w-1] = 1.0
+	//}
+	//for i:=0;i<w;i++{
+	//	res.data[h-1][i] = 1.0
+	//}
 	return imgMatrix
 
 }
