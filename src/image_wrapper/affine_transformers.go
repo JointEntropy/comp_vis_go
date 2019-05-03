@@ -47,6 +47,7 @@ func ApplyTransformer(tr Transformer, imgWrapper MImageWrapper) draw.Image{
 }
 
 func CreateRotateTransformer(angle float64, mode string) Transformer{
+	angle = angle/180.0 * math.Pi
 	if mode == "straight"{
 		matrix := Matrix{3,3,
 						[][]float64{

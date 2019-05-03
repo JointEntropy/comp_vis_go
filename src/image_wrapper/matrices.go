@@ -2,6 +2,7 @@ package image_wrapper
 
 import (
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -63,8 +64,54 @@ func (matr * Matrix) DumpToFile(filepath string){
 		return
 	}
 }
-func(matr Matrix)Inverse() Matrix{
-	return Matrix{}
+func(aMatr * Matrix)Inverse() Matrix{
+	det := aMatr.Determinant()
+	if det == 0{
+		log.Fatal("Определитель равен нулю. Сорян :-(")
+	}
+	res := MatrixLikeAnother(aMatr)
+	r := res.data
+	a := aMatr.data
+	// Ищем матрицу алгебраических дополнений
+	r[0][0] = a[1][1]*a[2][2] - a[2][1]*a[1][2]
+	r[0][1] = - (a[1][0]*a[2][2] - a[2][0]*a[1][2])
+	r[0][2] = a[1][0]*a[2][1] - a[2][0]*a[1][1]
+
+	r[1][0] = - (a[0][1]*a[2][2] - a[2][1]*a[0][2])
+	r[1][1] = a[0][0]*a[2][2] - a[2][0]*a[0][2]
+	r[1][2] = - (a[0][0]*a[2][1] - a[2][0]*a[0][1])
+
+	r[2][0] = a[0][1]*a[1][2] - a[1][1]*a[0][2]
+	r[2][1] = - (a[0][0]*a[1][2] - a[1][0]*a[0][2])
+	r[2][2] = a[0][0]*a[1][1] - a[1][0]*a[0][1]
+
+	res.data = r
+	resTransposed := res.Transpose()
+	result := resTransposed.ScalarMultiply(1.0/det)
+	return result
+}
+func (a * Matrix) ScalarMultiply(val float64) Matrix{
+	res := MatrixLikeAnother(a)
+	for y:=0;y<res.h;y++{
+		for x:=0;x<res.w; x++{
+			res.data[y][x] = val * a.data[y][x]
+		}
+	}
+	return res
+}
+
+func (a * Matrix)Transpose() Matrix{
+	resData := make([][]float64, a.w)
+	for i:=0;i<a.w;i++{
+		resData[i] = make([]float64, a.h)
+	}
+	res := CreateMatrix(a.w,a.h, resData)
+	for y:=0;y<a.h; y++{
+		for x:=0;x<a.w;x++{
+			res.data[x][y] = a.data[y][x]
+		}
+	}
+	return res
 }
 
 
@@ -76,19 +123,46 @@ func  MatrixLikeAnother(matr * Matrix) Matrix{
 	return CreateMatrix(matr.h, matr.w, data)
 
 }
-//func(matr Matrix) Determinant() float64{
-//	H, W := matr.h, matr.w
-//	sign := 1
-//	total := 0
-//	for x:=0; x<W;x++{
-//		total += sign * matr.data[0][x] * Matrix{2,2,
-//			[][]float64{
-//				{matr.data[x+1][1], matr.data[x][1]},
-//				{}
-//			}}
-//		sign = sign * (-1)
-//	}
-//}
-//func(matr Matrix) Det2d() float64{
-//
-//}
+func(matr * Matrix) Determinant() float64{
+	a := matr.data
+	total := a[0][0] * (a[1][1]*a[2][2] - a[2][1]*a[1][2])+
+		    -a[0][1] * (a[1][0]*a[2][2] - a[2][0]*a[1][2])+
+		     a[0][2] * (a[1][0]*a[2][1] - a[2][0]*a[1][1])
+	return total
+}
+
+
+
+func testTranspose(){
+	testMatr2 :=CreateMatrix(3,2,[][]float64{
+		{1,2},
+		{1,4},
+		{5,6},
+	})
+	fmt.Println(testMatr2.Transpose())
+
+}
+
+func testDeterminan(){
+	testMatr := CreateMatrix(3,3,[][]float64{
+		{1,2,3},
+		{1,4,5},
+		{5,6,7},
+	})
+	if testMatr.Determinant() != 8{
+		log.Fatal("Неверно вычисляется определитель!")
+	}
+}
+
+func testInverse(){
+
+	testMatr := CreateMatrix(3,3,[][]float64{
+		{1.0,2.0,3.0},
+		{1.0,4.0,5.0},
+		{5.0,6.0,7.0},
+	})
+	// Проверяем, что обратная ищется правильно, с помощью матричного умножения.
+	invMatr := testMatr.Inverse()
+	fmt.Println(DotMatrix(&testMatr, &invMatr))
+
+}
