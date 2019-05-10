@@ -9,14 +9,13 @@ import (
 
 func main(){
 	img1 := image_wrapper.LoadMImageWrapperFromString("images/cat1.jpg")
-	img1.SaveImage("output", "jpg")
+	img1.SaveImage("output", "png")
 	imgMatr := img1.ToMatrix()
 
-	binary := image_wrapper.Binarize(imgMatr, 128)
+	binary := image_wrapper.Binarize(imgMatr, 150)
 	//resMatr.DumpToFile("output/binarize.txt")
 
-
-	// проверка валидности вычислений моментов
+	//проверка валидности вычислений моментов
 	eps := 1e-3
 	m00 := image_wrapper.CentralTwoDimensionalMoment(&binary, 0,0)
 	cm00 := image_wrapper.TwoDimensionalMoment(&binary, 0,0)
@@ -43,6 +42,10 @@ func main(){
 	fmt.Printf("Нормализованный центральный геометрический момент второго порядка %f\n",
 		image_wrapper.NormalizedCentralTwoDimensionalMoment(&binary, 1,1))
 	image_wrapper.FromMatrix(binary, "binarize", "jpg").SaveImage("output", "jpg")
+
+	img1 = image_wrapper.LoadMImageWrapperFromString("images/synt.png")
+	labeledMask := image_wrapper.LabelSectors4d(img1.ToMatrix())
+	image_wrapper.FromMatrix(labeledMask, "sectors4d", "png").SaveImage("output", "png")
 
 }
 
