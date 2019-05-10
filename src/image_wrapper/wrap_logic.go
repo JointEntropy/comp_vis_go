@@ -123,6 +123,19 @@ func (img  MImageWrapper) SaveImage(path string, format string) {
 	}
 
 }
+func CreateImageWrapperFromStatic(name string, frmt string, img image.Image) MImageWrapper{
+	bounds := img.Bounds()
+	w, h := bounds.Max.X, bounds.Max.Y
+	saveBuffer := image.NewGray(image.Rectangle{image.Point{0, 0}, image.Point{w, h}})
+	for x := 0; x < w; x++ {
+		for y := 0; y < h; y++ {
+			val := rgbaToGrey(img.At(x,y))
+			saveBuffer.Set(x, y, val)
+		}
+	}
+	iw := MImageWrapper{name, frmt, saveBuffer}
+	return iw
+}
 
 func (img *MImageWrapper) UpdateFromStatic(img2 image.Image){
 	bounds := img2.Bounds()
