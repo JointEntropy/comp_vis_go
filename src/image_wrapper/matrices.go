@@ -76,6 +76,16 @@ func  MatrixLikeAnother(matr * Matrix) Matrix{
 	return CreateMatrix(matr.h, matr.w, data)
 
 }
+
+func ZeroLikeAnother(matr *Matrix) Matrix{
+	zeroMatrix := MatrixLikeAnother(matr)
+	for y:=0; y<zeroMatrix.h; y++{
+		for x:=0;x<zeroMatrix.w; x++{
+			zeroMatrix.data[y][x] = 0
+		}
+	}
+	return zeroMatrix
+}
 //func(matr Matrix) Determinant() float64{
 //	H, W := matr.h, matr.w
 //	sign := 1
