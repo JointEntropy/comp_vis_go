@@ -41,18 +41,34 @@ func FloydSteinberg(image * MImageWrapper, k uint8) Matrix{
 	pallet := NewPallet(k)
 	imgMatrix := image.ToMatrix()
 	w, h := imgMatrix.w, imgMatrix.h
-	for y:=0;y<h-1;y++{
-		for x:=0;x<w-1;x++{
+	for y:=0;y<h;y++{
+		for x:=0;x<w;x++{
 			pixel := imgMatrix.data[y][x]
 			value := pallet.FindClosest(pixel)
 			err_ := pixel - value
 			imgMatrix.data[y][x] = value
-			imgMatrix.data[y + 0][x + 1] += err_ * 7.0/16.0
-			if x>0{
-				imgMatrix.data[y + 1][x - 1] += err_ * 3.0/16.0
+
+
+
+			if y==h-1{
+				if x<w-1{
+					imgMatrix.data[y][x + 1] += err_
+				}
+			}else{
+				if x==w-1{
+					imgMatrix.data[y + 1][x] += err_
+					continue
+				}
+				imgMatrix.data[y + 0][x + 1] += err_ * 7.0/16.0
+				if x>0{
+					imgMatrix.data[y + 1][x - 1] += err_ * 3.0/16.0
+				}
+				imgMatrix.data[y + 1][x    ] += err_ * 5.0/16.0
+				imgMatrix.data[y + 1][x + 1] += err_ * 1.0/16.0
+
+
 			}
-			imgMatrix.data[y + 1][x    ] += err_ * 5.0/16.0
-			imgMatrix.data[y + 1][x + 1] += err_ * 1.0/16.0
+
 		}
 	}
 
