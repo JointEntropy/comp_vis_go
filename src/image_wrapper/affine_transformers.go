@@ -1,35 +1,37 @@
 package image_wrapper
 
 import (
-	"image"
-	"image/draw"
 	"log"
 	"math"
 )
 
-func ApplyTransformer(tr Transformer, imgWrapper MImageWrapper) draw.Image{
-	img := imgWrapper.data
+
+
+func ApplyTransformer(tr Transformer, img Matrix) Matrix{
 	inverseTransform := tr.matrix.Inverse()
-	imgBounds := img.Bounds()
-	H, W :=  imgBounds .Max.Y, imgBounds.Max.X
+	H, W :=  img.h, img.w
 	bounds := Matrix{4, 3, [][]float64{
-		{0,0,1},
-		{float64(W),0,1},
-		{0,float64(H),1},
-		{float64(W), float64(H),1},
+		{0.0,0.0,1.0},
+		{float64(W),0.0,1.0},
+		{0.0,float64(H),1.0},
+		{float64(W), float64(H),1.0},
 	}}
 	newBounds := DotMatrix(&bounds, &tr.matrix)
 
 	newH := 0
 	for i:=0;i<4;i++{
-		newH = int(math.Max(newBounds.data[i][0], float64(newH)))
+		newH = int(math.Max(newBounds.data[i][1], float64(newH)))
 	}
 	newW := 0
 	for i:=0;i<4;i++{
-		newW = int(math.Max(newBounds.data[i][1], float64(newW)))
+		newW = int(math.Max(newBounds.data[i][0], float64(newW)))
 	}
-	newImg := image.NewGray(image.Rectangle{image.Point{0, 0},
-			image.Point{newH, newW}})
+
+	data := make([][]float64, newH)
+	for i:=0;i<newH;i++{
+		data[i] = make([]float64, newW)
+	}
+	newImg := CreateMatrix(newH, newW, data)
 	for y:=0; y<newH;y++{
 		for x:=0; x<newW;x++{
 			pnt := Matrix{1,3, [][]float64{{float64(x),float64(y),1}}}
@@ -39,10 +41,10 @@ func ApplyTransformer(tr Transformer, imgWrapper MImageWrapper) draw.Image{
 			if (oldY >(H-1)) || (oldY<0) || (oldX>(W-1)) || (oldX<0){
 				continue
 			}
-			val := rgbaToGrey(img.At(oldX, oldY))
-			newImg.Set(x,y, val)
+			newImg.data[y][x] = img.data[oldY][oldX]
 		}
 	}
+
 	return newImg
 }
 
