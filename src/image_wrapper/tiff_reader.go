@@ -67,8 +67,8 @@ func (e UnsupportedError) Error() string {
 var errNoPixels = FormatError("not enough pixel data")
 
 
-
-// Основная функция парсинга файла типа tiff из указателя на чтение r
+// Основная функция парсинга файла типа tiff из указателя на чтение r.
+// TODO: Возвращаёт объект изображения
 // Decode reads a TIFF image from r and returns it as an image.Image.
 // The type of Image returned depends on the contents of the TIFF.
 func parse(r io.Reader) (img image.Image, err error) {
@@ -130,29 +130,9 @@ func parse(r io.Reader) (img image.Image, err error) {
 	}
 
 	imgRect := image.Rect(0, 0, d.config.Width, d.config.Height)
-	switch d.mode {
-	//case mGray, mGrayInvert:
-	//	if d.bpp == 16 {
-	//		img = image.NewGray16(imgRect)
-	//	} else {
-	//		img = image.NewGray(imgRect)
-	//	}
-	//case mPaletted:
-	//	img = image.NewPaletted(imgRect, d.palette)
-	//case mNRGBA:
-	//	if d.bpp == 16 {
-	//		img = image.NewNRGBA64(imgRect)
-	//	} else {
-	//		img = image.NewNRGBA(imgRect)
-	//	}
-	case mRGB, mRGBA:
-		if d.bpp == 8 {
-			img = image.NewRGBA(imgRect)
-		}
-		//else {
-		//	img = image.NewRGBA64(imgRect)
-		//}
-	}
+	// на основе d.mode создаём изображения некоторой размерности
+	img = image.NewRGBA(imgRect)
+
 
 	for i := 0; i < blocksAcross; i++ {
 		blkW := blockWidth
@@ -168,9 +148,7 @@ func parse(r io.Reader) (img image.Image, err error) {
 			n := int64(blockCounts[j*blocksAcross+i])
 			switch d.firstVal(tCompression) {
 
-			// According to the spec, Compression does not have a default value,
-			// but some tools interpret a missing Compression value as none so we do
-			// the same.
+
 			// Поддерживаем единственное значение - его отсутствие.
 			case cNone, 0:
 				if b, ok := d.r.(*buffer); ok {
@@ -179,20 +157,6 @@ func parse(r io.Reader) (img image.Image, err error) {
 					d.buf = make([]byte, n)
 					_, err = d.r.ReadAt(d.buf, offset)
 				}
-			//case cLZW:
-			//	r := lzw.NewReader(io.NewSectionReader(d.r, offset, n), lzw.MSB, 8)
-			//	d.buf, err = ioutil.ReadAll(r)
-			//	r.Close()
-			//case cDeflate, cDeflateOld:
-			//	var r io.ReadCloser
-			//	r, err = zlib.NewReader(io.NewSectionReader(d.r, offset, n))
-			//	if err != nil {
-			//		return nil, err
-			//	}
-			//	d.buf, err = ioutil.ReadAll(r)
-			//	r.Close()
-			//case cPackBits:
-			//	d.buf, err = unpackBits(io.NewSectionReader(d.r, offset, n))
 			default:
 				err = UnsupportedError(fmt.Sprintf("compression value %d", d.firstVal(tCompression)))
 			}

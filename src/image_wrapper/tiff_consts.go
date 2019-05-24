@@ -1,5 +1,11 @@
 package image_wrapper
 
+// 12 байт на каждый ifd
+// константы
+// в каждом ifd тэге:
+// -ключ тега
+// - тип данных и длина
+// - сами данные(если не больше 4 байт) или указатель.
 // A tiff image file contains one or more images. The metadata
 // of each image is contained in an Image File Directory (IFD),
 // which contains entries of 12 bytes each and is described
@@ -111,19 +117,19 @@ const (
 )
 
 // CompressionType describes the type of compression used in Options.
-type CompressionType int
-
-const (
-	Uncompressed CompressionType = iota
-	Deflate
-)
+//type CompressionType int
+//
+//const (
+//	Uncompressed CompressionType = iota
+//	Deflate
+//)
 
 // specValue returns the compression type constant from the TIFF spec that
 // is equivalent to c.
-func (c CompressionType) specValue() uint32 {
-	switch c {
-	case Deflate:
-		return cDeflate
-	}
-	return cNone
-}
+//func (c CompressionType) specValue() uint32 {
+//	switch c {
+//	case Deflate:
+//		return cDeflate
+//	}
+//	return cNone
+//}
