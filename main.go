@@ -8,6 +8,7 @@ import (
 func main(){
 	parser := image_wrapper.CreateTiffParser()
 	ok := parser.Parse("images/girl.tif")
+	//ok := parser.Parse("images/multipage_tiff_example.tif")
 	if !ok{
 		log.Fatal("Error parsing file")
 	}
