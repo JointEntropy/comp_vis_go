@@ -1,11 +1,9 @@
 package image_wrapper
 
 import (
-	"bufio"
 	"io"
 )
 
-// buffer buffers an io.Reader to satisfy io.ReaderAt.
 type buffer struct {
 	r   io.Reader
 	buf []byte
@@ -46,8 +44,7 @@ func (b *buffer) ReadAt(p []byte, off int64) (int, error) {
 	return copy(p, b.buf[o:end]), err
 }
 
-// Slice returns a slice of the underlying buffer. The slice contains
-// n bytes starting at offset off.
+// Slice returns a slice of the underlying buffer. The slice contains n bytes starting at offset off.
 func (b *buffer) Slice(off, n int) ([]byte, error) {
 	end := off + n
 	if err := b.fill(end); err != nil {
@@ -67,53 +64,50 @@ func newReaderAt(r io.Reader) io.ReaderAt {
 	}
 }
 
+//
+//type byteReader interface {
+//	io.Reader
+//	io.ByteReader
+//}
 
-
-
-type byteReader interface {
-	io.Reader
-	io.ByteReader
-}
-
-// unpackBits decodes the PackBits-compressed data in src and returns the
-// uncompressed data.
+// unpackBits decodes the PackBits-compressed data in src and returns the uncompressed data.
 //
 // The PackBits compression format is described in section 9 (p. 42)
 // of the TIFF spec.
-func unpackBits(r io.Reader) ([]byte, error) {
-	buf := make([]byte, 128)
-	dst := make([]byte, 0, 1024)
-	br, ok := r.(byteReader)
-	if !ok {
-		br = bufio.NewReader(r)
-	}
-
-	for {
-		b, err := br.ReadByte()
-		if err != nil {
-			if err == io.EOF {
-				return dst, nil
-			}
-			return nil, err
-		}
-		code := int(int8(b))
-		switch {
-		case code >= 0:
-			n, err := io.ReadFull(br, buf[:code+1])
-			if err != nil {
-				return nil, err
-			}
-			dst = append(dst, buf[:n]...)
-		case code == -128:
-			// No-op.
-		default:
-			if b, err = br.ReadByte(); err != nil {
-				return nil, err
-			}
-			for j := 0; j < 1-code; j++ {
-				buf[j] = b
-			}
-			dst = append(dst, buf[:1-code]...)
-		}
-	}
-}
+//func unpackBits(r io.Reader) ([]byte, error) {
+//	buf := make([]byte, 128)
+//	dst := make([]byte, 0, 1024)
+//	br, ok := r.(byteReader)
+//	if !ok {
+//		br = bufio.NewReader(r)
+//	}
+//
+//	for {
+//		b, err := br.ReadByte()
+//		if err != nil {
+//			if err == io.EOF {
+//				return dst, nil
+//			}
+//			return nil, err
+//		}
+//		code := int(int8(b))
+//		switch {
+//		case code >= 0:
+//			n, err := io.ReadFull(br, buf[:code+1])
+//			if err != nil {
+//				return nil, err
+//			}
+//			dst = append(dst, buf[:n]...)
+//		case code == -128:
+//			// No-op.
+//		default:
+//			if b, err = br.ReadByte(); err != nil {
+//				return nil, err
+//			}
+//			for j := 0; j < 1-code; j++ {
+//				buf[j] = b
+//			}
+//			dst = append(dst, buf[:1-code]...)
+//		}
+//	}
+//}

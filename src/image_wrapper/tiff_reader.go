@@ -5,16 +5,14 @@ import (
 	"fmt"
 	"image"
 	"io"
-	"os"
 )
 
-// A reader is an io.Reader that can also peek ahead.
+// Стандартный reader + интерфейс дл  заглядывания вперёд
 type reader interface {
 	io.Reader
 	Peek(int) ([]byte, error)
 }
 
-// asReader converts an io.Reader to a reader.
 func asReader(r io.Reader) reader {
 	if rr, ok := r.(reader); ok {
 		return rr
@@ -28,49 +26,9 @@ type format struct {
 	decodeConfig func(io.Reader) (image.Config, error)
 }
 
-func parseTiff(path string) (image.Image, error){
-	// Открываем файл на чтение
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-
-	// Говорим чтоб выполнилось после выхода из parseTiff
-	defer f.Close()
-	// decode
-	rr := asReader(f)
-	//f := sniff(rr)
-
-	// Готовим объект парсинга tiff. Decode парсит данные, decodeConfig парсит заголовок.
-	frmt := format{"tiff", parse, parseConfig}
-	// Начинаем парсинг
-	m, err := frmt.decode(rr)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-// A FormatError reports that the input is not a valid TIFF image.
-type FormatError string
-func (e FormatError) Error() string {
-	return "tiff: invalid format: " + string(e)
-}
-
-// An UnsupportedError reports that the input uses a valid but
-// unimplemented feature.
-type UnsupportedError string
-func (e UnsupportedError) Error() string {
-	return "tiff: unsupported feature: " + string(e)
-}
-
-var errNoPixels = FormatError("not enough pixel data")
-
 
 // Основная функция парсинга файла типа tiff из указателя на чтение r.
 // TODO: Возвращаёт объект изображения
-// Decode reads a TIFF image from r and returns it as an image.Image.
-// The type of Image returned depends on the contents of the TIFF.
 func parse(r io.Reader) (img image.Image, err error) {
 	d, err := newDecoder(r)
 	if err != nil {
@@ -124,7 +82,7 @@ func parse(r io.Reader) (img image.Image, err error) {
 		blockCounts = d.features[tStripByteCounts]
 	}
 
-	// Check if we have the right number of strips/tiles, offsets and counts.
+	// Проверяем, что число блоков валидно. Check if we have the right number of strips/tiles, offsets and counts.
 	if n := blocksAcross * blocksDown; len(blockOffsets) < n || len(blockCounts) < n {
 		return nil, FormatError("inconsistent header")
 	}
@@ -132,13 +90,15 @@ func parse(r io.Reader) (img image.Image, err error) {
 	imgRect := image.Rect(0, 0, d.config.Width, d.config.Height)
 	// на основе d.mode создаём изображения некоторой размерности
 	img = image.NewRGBA(imgRect)
+	//matr := CreateMatrix(d.config.Height, d.config.Width, float64[][]{})
 
-
+	// Для каждого строки блоков
 	for i := 0; i < blocksAcross; i++ {
 		blkW := blockWidth
 		if !blockPadding && i == blocksAcross-1 && d.config.Width%blockWidth != 0 {
 			blkW = d.config.Width % blockWidth
 		}
+		// Для каждого столбца блоков.
 		for j := 0; j < blocksDown; j++ {
 			blkH := blockHeight
 			if !blockPadding && j == blocksDown-1 && d.config.Height%blockHeight != 0 {
@@ -149,10 +109,10 @@ func parse(r io.Reader) (img image.Image, err error) {
 			switch d.firstVal(tCompression) {
 
 
-			// Поддерживаем единственное значение - его отсутствие.
+			// Поддерживаем единственное значение режима сжатия- его отсутствие.
 			case cNone, 0:
 				if b, ok := d.r.(*buffer); ok {
-					d.buf, err = b.Slice(int(offset), int(n)) // выбираем n байт начиная с offset
+					d.buf, err = b.Slice(int(offset), int(n)) // выбираем n байт начиная с offset и пишем в буфер
 				} else {
 					d.buf = make([]byte, n)
 					_, err = d.r.ReadAt(d.buf, offset)

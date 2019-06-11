@@ -38,8 +38,14 @@ func (pal Pallet)FindClosest(val float64) float64 {
 
 
 func FloydSteinberg(image * MImageWrapper, k uint8) Matrix{
-	pallet := NewPallet(k)
 	imgMatrix := image.ToMatrix()
+	FloydSteinbergMatr(&imgMatrix, k)
+	return imgMatrix
+}
+
+func FloydSteinbergMatr(img * Matrix, k uint8) Matrix{
+	pallet := NewPallet(k)
+	imgMatrix := MatrixLikeAnother(img)
 	w, h := imgMatrix.w, imgMatrix.h
 	for y:=0;y<h-1;y++{
 		for x:=0;x<w-1;x++{

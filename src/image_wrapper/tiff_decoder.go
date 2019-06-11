@@ -27,14 +27,13 @@ type decoder struct {
 
 
 
-// flushBits discards the unread bits in the buffer used by readBits.
-// It is used at the end of a line.
+// flushBits discards the unread bits in the buffer used by readBits . It is used at the end of a line.
 func (d *decoder) flushBits() {
 	d.v = 0
 	d.nbits = 0
 }
 
-// readBits reads n bits from the internal buffer starting at the current offset.
+// считывает n бит с внутреннего буфера начиная с текущего индекса.
 func (d *decoder) readBits(n uint) (v uint32, ok bool) {
 	for d.nbits < n {
 		d.v <<= 8
@@ -52,8 +51,7 @@ func (d *decoder) readBits(n uint) (v uint32, ok bool) {
 }
 
 // Получаем первое значение распарсеного тега заголовка по его ключу.
-// firstVal returns the first uint of the features entry with the given tag,
-// or 0 if the tag does not exist.
+// Возвращает первое найденное значения с нужным тегом или 0.
 func (d *decoder) firstVal(tag int) uint {
 	f := d.features[tag]
 	if len(f) == 0 {
@@ -62,14 +60,12 @@ func (d *decoder) firstVal(tag int) uint {
 	return f[0]
 }
 
-// decode decodes the raw data of an image.
-// It reads from d.buf and writes the strip or tile into dst.
+// считываем с буфера декодера  сырые данные по индексам.
+// и пишем стрип или tile в dst изображения.
 func (d *decoder) decode(dst image.Image, xmin, ymin, xmax, ymax int) error {
 	d.off = 0
 
-	// Apply horizontal predictor if necessary.
-	// In this case, p contains the color difference to the preceding pixel.
-	// See page 64-65 of the spec.
+	// в спеках 64-65 кейс с обработкой разницы в случае с tPredictor равным prHorizontal
 	if d.firstVal(tPredictor) == prHorizontal {
 		switch d.bpp {
 		case 8:
@@ -97,6 +93,7 @@ func (d *decoder) decode(dst image.Image, xmin, ymin, xmax, ymax int) error {
 		if d.bpp == 8 {
 			img := dst.(*image.RGBA)
 			for y := ymin; y < rMaxY; y++ {
+				// PixOffset returns the index of the first element of Pix that corresponds to the pixel at (x, y).
 				min := img.PixOffset(xmin, y)
 				max := img.PixOffset(rMaxX, y)
 				off := (y - ymin) * (xmax - xmin) * 3
@@ -118,6 +115,7 @@ func (d *decoder) decode(dst image.Image, xmin, ymin, xmax, ymax int) error {
 }
 
 
+// парсим ImageFolderDIrectory
 // parseIFD decides whether the IFD entry in p is "interesting" and
 // stows away the data in the decoder. It returns the tag number of the
 // entry and an error, if any.
