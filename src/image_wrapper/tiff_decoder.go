@@ -20,14 +20,14 @@ type decoder struct {
 	palette   []color.Color
 
 	buf   []byte
-	off   int    // Current offset in buf.
-	v     uint32 // Buffer value for reading with arbitrary bit depths.
-	nbits uint   // Remaining number of bits in v.
+	off   int    // текущее смещение буфера
+	v     uint32 // значение для буфера для считывания с произвольной глубиной
+	nbits uint   // оставшееся число бит в буфере
 }
 
 
 
-// flushBits discards the unread bits in the buffer used by readBits . It is used at the end of a line.
+// выпилиывает из буфера мусор(остаток строки)
 func (d *decoder) flushBits() {
 	d.v = 0
 	d.nbits = 0
@@ -115,10 +115,9 @@ func (d *decoder) decode(dst image.Image, xmin, ymin, xmax, ymax int) error {
 }
 
 
-// парсим ImageFolderDIrectory
-// parseIFD decides whether the IFD entry in p is "interesting" and
-// stows away the data in the decoder. It returns the tag number of the
-// entry and an error, if any.
+// парсим ImageFolderDIrectory определяя поддерживаем этот тег или нет.
+// parseIFD decides whether the IFD entry in p is "interesting" and stows away the data in the decoder.
+// It returns the tag number of the entry and an error, if any.
 func (d *decoder) parseIFD(p []byte) (int, error) {
 	tag := d.byteOrder.Uint16(p[0:2])
 	switch tag {
