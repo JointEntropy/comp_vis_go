@@ -6,17 +6,19 @@ import (
 )
 
 func main(){
-	parser := image_wrapper.CreateTiffParser()
-	ok := parser.Parse("images/girl.tif")
+	parsedData, err := image_wrapper.ParseTiff("images/girl.tif")
 	//ok := parser.Parse("images/multipage_tiff_example.tif")
-	if !ok{
+	if err != nil{
 		log.Fatal("Error parsing file")
 	}
-	data := parser.GetData()
 
-	img := image_wrapper.CreateImageWrapperFromStatic("tiff_parse_res", "jpg", data)
-	img.UpdateFromStatic(data)
-	//img := image_wrapper.FromMatrix(data, "parsed_data", "png")
-	img.SaveImage("output", "jpg")
+	img := image_wrapper.CreateImageWrapperFromStatic("tiff_parse_res", "jpg", parsedData)
+	img.UpdateFromStatic(parsedData)
+	matr := img.ToMatrix()
+
+	flRes := image_wrapper.FloydSteinbergMatr(matr, 1)
+
+	flResImg := image_wrapper.FromMatrix(flRes, "parsed_data", "png")
+	flResImg.SaveImage("output", "jpg")
 }
 
