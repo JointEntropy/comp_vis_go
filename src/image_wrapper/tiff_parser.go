@@ -20,8 +20,8 @@ func ParseTiff(path string) (image.Image, error){
 	//f := sniff(rr)
 
 	// Готовим объект парсинга tiff:
-	// Decode - парсер сырых данных, decodeConfig - парсер заголовка.
-	frmt := format{"tiff", parse, parseConfig}
+	// Decode - парсер сырых данных
+	frmt := format{"tiff", parse}
 	// Начинаем парсинг
 	m, err := frmt.decode(rr)
 	if err != nil {
@@ -38,16 +38,6 @@ func ParseTiff(path string) (image.Image, error){
 // -ключ тега
 // - тип данных и длина
 // - сами данные(если не больше 4 байт) или указатель.
-// A tiff image file contains one or more images. The metadata
-// of each image is contained in an Image File Directory (IFD),
-// which contains entries of 12 bytes each and is described
-// on page 14-16 of the specification. An IFD entry consists of
-//
-//  - a tag, which describes the signification of the entry,
-//  - the data type and length of the entry,
-//  - the data itself or a pointer to it if it is more than 4 bytes.
-//
-// The presence of a length means that each IFD is effectively an array.
 
 const (
 	leHeader = "II\x2A\x00" // Header for little-endian files.

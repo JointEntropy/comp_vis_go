@@ -62,7 +62,8 @@ func (d *decoder) firstVal(tag int) uint {
 
 // считываем с буфера декодера  сырые данные по индексам.
 // и пишем стрип или tile в dst изображения.
-func (d *decoder) decode(dst image.Image, xmin, ymin, xmax, ymax int) error {
+func (d *decoder) decode(dst image.Image,
+	                     xmin, ymin, xmax, ymax int) error {
 	d.off = 0
 
 	// в спеках 64-65 кейс с обработкой разницы в случае с tPredictor равным prHorizontal
@@ -88,6 +89,7 @@ func (d *decoder) decode(dst image.Image, xmin, ymin, xmax, ymax int) error {
 
 	rMaxX := minInt(xmax, dst.Bounds().Max.X)
 	rMaxY := minInt(ymax, dst.Bounds().Max.Y)
+
 	switch d.mode {
 	case mRGB:
 		if d.bpp == 8 {
@@ -116,8 +118,7 @@ func (d *decoder) decode(dst image.Image, xmin, ymin, xmax, ymax int) error {
 
 
 // парсим ImageFolderDIrectory определяя поддерживаем этот тег или нет.
-// parseIFD decides whether the IFD entry in p is "interesting" and stows away the data in the decoder.
-// It returns the tag number of the entry and an error, if any.
+// Возвращаем номер тега и ошибку или nil.
 func (d *decoder) parseIFD(p []byte) (int, error) {
 	tag := d.byteOrder.Uint16(p[0:2])
 	switch tag {

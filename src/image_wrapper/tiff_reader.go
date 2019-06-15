@@ -23,12 +23,11 @@ func asReader(r io.Reader) reader {
 type format struct {
 	name string
 	decode       func(io.Reader) (image.Image, error)
-	decodeConfig func(io.Reader) (image.Config, error)
+	//decodeConfig func(io.Reader) (image.Config, error)
 }
 
 
 // Основная функция парсинга файла типа tiff из указателя на чтение r.
-// TODO: Возвращаёт объект изображения
 func parse(r io.Reader) (img image.Image, err error) {
 	d, err := newDecoder(r)
 	if err != nil {
@@ -40,8 +39,6 @@ func parse(r io.Reader) (img image.Image, err error) {
 	blockHeight := d.config.Height
 	blocksAcross := 1
 	blocksDown := 1
-
-	/// TODO: Уточнить
 	if d.config.Width == 0 {
 		blocksAcross = 0
 	}
@@ -82,7 +79,7 @@ func parse(r io.Reader) (img image.Image, err error) {
 		blockCounts = d.features[tStripByteCounts]
 	}
 
-	// Проверяем, что число блоков валидно. Check if we have the right number of strips/tiles, offsets and counts.
+	// Проверяем, что число блоков валидно.
 	if n := blocksAcross * blocksDown; len(blockOffsets) < n || len(blockCounts) < n {
 		return nil, FormatError("inconsistent header")
 	}
@@ -90,8 +87,6 @@ func parse(r io.Reader) (img image.Image, err error) {
 	imgRect := image.Rect(0, 0, d.config.Width, d.config.Height)
 	// на основе d.mode создаём изображения некоторой размерности
 	img = image.NewRGBA(imgRect)
-	//matr := CreateMatrix(d.config.Height, d.config.Width, float64[][]{})
-
 	// Для каждого строки блоков
 	for i := 0; i < blocksAcross; i++ {
 		blkW := blockWidth
@@ -128,7 +123,8 @@ func parse(r io.Reader) (img image.Image, err error) {
 			ymin := j * blockHeight
 			xmax := xmin + blkW
 			ymax := ymin + blkH
-			err = d.decode(img, xmin, ymin, xmax, ymax)
+			err = d.decode(img,
+				           xmin, ymin, xmax, ymax)
 			if err != nil {
 				return nil, err
 			}
@@ -136,13 +132,3 @@ func parse(r io.Reader) (img image.Image, err error) {
 	}
 	return
 }
-
-// DecodeConfig returns the color model and dimensions of a TIFF image without decoding the entire image.
-func parseConfig(r io.Reader) (image.Config, error) {
-	d, err := newDecoder(r)
-	if err != nil {
-		return image.Config{}, err
-	}
-	return d.config, nil
-}
-

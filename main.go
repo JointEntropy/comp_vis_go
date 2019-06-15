@@ -19,6 +19,6 @@ func main(){
 	flRes := image_wrapper.FloydSteinbergMatr(matr, 1)
 
 	flResImg := image_wrapper.FromMatrix(flRes, "parsed_data", "png")
-	flResImg.SaveImage("output", "jpg")
+	flResImg.SaveImage("output", "png")
 }
 

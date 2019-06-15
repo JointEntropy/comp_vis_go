@@ -10,6 +10,14 @@ type Matrix struct{
 	w int
 	data [][]float64
 }
+
+type ImageMatrix struct{
+	h int
+	w int
+	data [4] Matrix
+}
+
+
 type Transformer struct{
 	matrix Matrix
 }
@@ -20,6 +28,33 @@ func CreateMatrix(h int, w int, data [][]float64) Matrix{
 
 func CreatePoint(x int, y int) Matrix{
 	return Matrix{1,3, [][]float64{{float64(y), float64(x), 1}}}
+}
+
+
+func CreateImageMatrix(h int, w int) ImageMatrix {
+	imgMatrix := ImageMatrix{
+		h,
+		w,
+		[4]Matrix{
+			{h, w, [][]float64{}},
+			{h, w, [][]float64{}},
+			{h, w, [][]float64{}},
+			{h, w, [][]float64{}},
+		},
+	}
+	for k := 0; k < 4; k++ {
+		for y := 0; y < h; y++ {
+			for x := 0; x < w; x++ {
+				if k==3{
+					imgMatrix.data[k].data[y][x] = 1
+				}else{
+					imgMatrix.data[k].data[y][x] = 0
+				}
+
+			}
+		}
+	}
+	return imgMatrix
 }
 
 func DotMatrix(a  * Matrix, b  * Matrix) Matrix{
@@ -74,7 +109,6 @@ func  MatrixLikeAnother(matr * Matrix) Matrix{
 		data[i] = make([]float64, matr.w)
 	}
 	return CreateMatrix(matr.h, matr.w, data)
-
 }
 
 func ZeroLikeAnother(matr *Matrix) Matrix{
